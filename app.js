@@ -292,6 +292,8 @@ function prepareWheelPool() {
   });
   
   rouletteStatus.textContent = `La roulette contiene tutti i ${available.length} Skylanders rimanenti. Premi SPIN!`;
+
+
 }
 
 function drawWheel() {
