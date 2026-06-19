@@ -282,16 +282,16 @@ function prepareWheelPool() {
   // If we already have a loaded pool or are spinning, don't re-shuffle
   if (isSpinning) return;
 
-  // Visual Enhancement: Limit to a subset of max 12 characters to keep segments readable
-  // Shuffle available list to select a random subset
-  const shuffled = [...available].sort(() => 0.5 - Math.random());
-  currentWheelPool = shuffled.slice(0, Math.min(available.length, 12));
+  // Include ALL available characters
+  // Sort them by Element to group matching colors together on the wheel, creating a beautiful rainbow sector layout
+  const elementOrderIndex = ["Magic", "Earth", "Water", "Fire", "Tech", "Undead", "Life", "Air", "Light", "Dark", "Kaos"];
+  currentWheelPool = [...available].sort((a, b) => {
+    const diff = elementOrderIndex.indexOf(a.element) - elementOrderIndex.indexOf(b.element);
+    if (diff !== 0) return diff;
+    return a.name.localeCompare(b.name);
+  });
   
-  if (available.length > 12) {
-    rouletteStatus.textContent = `La roulette mostra 12 dei ${available.length} Skylanders rimanenti.`;
-  } else {
-    rouletteStatus.textContent = "Premi SPIN per estrarre!";
-  }
+  rouletteStatus.textContent = `La roulette contiene tutti i ${available.length} Skylanders rimanenti. Premi SPIN!`;
 }
 
 function drawWheel() {
@@ -351,21 +351,32 @@ function drawWheel() {
     ctxWheel.textAlign = "right";
     ctxWheel.textBaseline = "middle";
     ctxWheel.fillStyle = "#ffffff";
-    ctxWheel.font = "bold 11px Outfit, sans-serif";
+    
+    // Scale font size and text limits dynamically to prevent overlaps on thin segments
+    let fontSize = 11;
+    let maxCharLen = 17;
+    if (numSegments > 24) { fontSize = 9; maxCharLen = 14; }
+    if (numSegments > 48) { fontSize = 7.5; maxCharLen = 11; }
+    if (numSegments > 80) { fontSize = 6.5; maxCharLen = 9; }
+    if (numSegments > 120) { fontSize = 5.5; maxCharLen = 7; }
+    
+    ctxWheel.font = `bold ${fontSize}px Outfit, sans-serif`;
     
     // Drop shadow for readability
     ctxWheel.shadowColor = "rgba(0, 0, 0, 0.7)";
-    ctxWheel.shadowBlur = 4;
+    ctxWheel.shadowBlur = 3;
     ctxWheel.shadowOffsetX = 1;
     ctxWheel.shadowOffsetY = 1;
 
     // Truncate name if it's too long
     let displayName = skylander.name;
-    if (displayName.length > 17) {
-      displayName = displayName.substring(0, 15) + "..";
+    if (displayName.length > maxCharLen) {
+      displayName = displayName.substring(0, maxCharLen - 2) + "..";
     }
 
-    ctxWheel.fillText(displayName, radius - 24, 0);
+    // Move text closer to the rim when segments are thin to avoid center clustering
+    const textOffset = numSegments > 48 ? 12 : 24;
+    ctxWheel.fillText(displayName, radius - textOffset, 0);
     ctxWheel.restore();
   }
 
