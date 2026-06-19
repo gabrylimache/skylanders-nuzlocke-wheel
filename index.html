@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skylanders Nuzlocke Roulette & Tracker</title>
+  <meta name="description" content="Gestisci la tua run Nuzlocke di Skylanders. Scegli il gioco, traccia gli Skylanders già usciti ed estrai il prossimo componente del team con una spettacolare roulette animata.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Confetti Canvas for celebration -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <header>
+    <div class="container header-content">
+      <div class="title-area">
+        <div>
+          <h1>Skylanders Nuzlocke</h1>
+          <div class="subtitle">Roulette & Tracker</div>
+        </div>
+      </div>
+      
+      <!-- Import / Export Bar -->
+      <div class="file-actions" id="fileActions">
+        <button class="btn-file" title="Esporta lo stato della tua run in un file JSON">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          Esporta Salvataggio
+          <span id="btnExport" style="position:absolute; top:0; left:0; width:100%; height:100%; cursor:pointer;"></span>
+        </button>
+        <button class="btn-file" title="Trascina qui il file JSON o clicca per importare">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+          Importa Salvataggio
+          <input type="file" id="fileImport" accept=".json">
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="main-grid" id="mainDropZone">
+      
+      <!-- Left Column: Controls, Game selection, Stats & Settings -->
+      <div class="left-column" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        
+        <!-- Game Selector Panel -->
+        <section class="glass-panel game-selector">
+          <h2>Seleziona Gioco</h2>
+          <div class="game-grid" id="gameGrid">
+            <button class="game-btn active" data-game="Spyro's Adventure">
+              <span class="abbr">SSA</span>
+              <span class="full-name">Spyro's Adv.</span>
+            </button>
+            <button class="game-btn" data-game="Giants">
+              <span class="abbr">SG</span>
+              <span class="full-name">Giants</span>
+            </button>
+            <button class="game-btn" data-game="Swap Force">
+              <span class="abbr">SSF</span>
+              <span class="full-name">Swap Force</span>
+            </button>
+            <button class="game-btn" data-game="Trap Team">
+              <span class="abbr">STT</span>
+              <span class="full-name">Trap Team</span>
+            </button>
+            <button class="game-btn" data-game="SuperChargers">
+              <span class="abbr">SSC</span>
+              <span class="full-name">SuperChargers</span>
+            </button>
+            <button class="game-btn" data-game="Imaginators">
+              <span class="abbr">SI</span>
+              <span class="full-name">Imaginators</span>
+            </button>
+          </div>
+          
+          <!-- Run Settings Toggles -->
+          <div class="settings-box">
+            <div class="setting-row">
+              <label for="toggleMinis">Includi Mini / Sidekicks</label>
+              <label class="switch">
+                <input type="checkbox" id="toggleMinis">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-row" id="rowReimagined" style="display: none;">
+              <label for="toggleReimagined">Includi SuperChargers Reimagined</label>
+              <label class="switch">
+                <input type="checkbox" id="toggleReimagined">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Run Statistics Panel -->
+        <section class="glass-panel">
+          <h2>Statistiche Run</h2>
+          <div class="stats-panel">
+            <div class="stat-card">
+              <div class="stat-value" id="statPoolSize">0</div>
+              <div class="stat-label">Roster Totale</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statRolled">0</div>
+              <div class="stat-label">Già Usciti</div>
+            </div>
+            <div class="stat-card" style="grid-column: span 2;">
+              <div class="stat-value" id="statRemaining" style="color: #60a5fa;">0</div>
+              <div class="stat-label">Ancora in Roulette</div>
+            </div>
+          </div>
+          
+          <button class="btn-file btn-danger" id="btnResetRun" style="width: 100%; margin-top: 1.5rem; justify-content: center;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            Resetta Run Corrente
+          </button>
+        </section>
+
+      </div>
+
+      <!-- Right Column: Roulette & Roster View -->
+      <div class="right-column" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        
+        <!-- Roulette Section -->
+        <section class="glass-panel roulette-container" id="roulettePanel">
+          <div class="wheel-wrapper">
+            <div class="wheel-outer-glow" id="wheelGlow"></div>
+            <div class="wheel-pointer" id="wheelPointer" title="Il puntatore della roulette"></div>
+            <canvas id="rouletteWheel" width="380" height="380"></canvas>
+            <button class="spin-center-btn" id="btnSpin">SPIN</button>
+          </div>
+          <div class="roulette-status-text" id="rouletteStatus">Scegli un gioco ed estrai un personaggio!</div>
+        </section>
+
+        <!-- Roster Grid Section -->
+        <section class="glass-panel">
+          <div class="roster-header">
+            <div>
+              <h2>Skylanders Disponibili</h2>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+                Clicca su uno Skylander per segnarlo come già uscito (o rimetterlo nella roulette).
+              </p>
+            </div>
+            <div class="roster-controls">
+              <button class="btn-secondary" id="btnMarkAllRolled">Segna Tutti Usciti</button>
+              <button class="btn-secondary" id="btnMarkAllAvailable">Ripristina Tutti</button>
+            </div>
+          </div>
+          
+          <div class="roster-explorer" id="rosterExplorer" style="margin-top: 1.5rem;">
+            <!-- Grouped elements will be injected here dynamically -->
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Winner Celebration Modal -->
+  <div class="modal-overlay" id="winnerModalOverlay">
+    <div class="modal-card" id="winnerModalCard">
+      <div class="modal-subtitle">Skylander Estratto!</div>
+      <div class="modal-title" id="winnerName">Chop Chop</div>
+      <div class="modal-element-badge" id="winnerElement">Undead</div>
+      
+      <div class="modal-meta-info">
+        <div class="modal-meta-item">Gioco: <strong id="winnerGame">Spyro's Adventure</strong></div>
+        <div class="modal-meta-item">Classe: <strong id="winnerType">Core</strong></div>
+      </div>
+      
+      <button class="btn-modal-close" id="btnModalClose">CONFERMA E RIMUOVI DALLA POOL</button>
+    </div>
+  </div>
+
+  <!-- Script Files -->
+  <script src="skylanders.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
